@@ -242,8 +242,8 @@
       <h2>The wall</h2>
       <div class="big-count"><span id="count">000</span><small> / 100</small></div>
     </div>
-    <div class="wall reveal" id="wall" role="list" aria-label="100-project progress wall, 0 shipped"></div>
-    <p class="wall-caption reveal"><b>100 cells dark.</b> Run your cursor over them — that's the future flickering.</p>
+    <div class="wall reveal" id="wall" role="list" aria-label="100-project progress wall, 1 shipped"></div>
+    <p class="wall-caption reveal"><b>1 lit, 99 to go.</b> Run your cursor over the dark ones — that's the future flickering.</p>
   </section>
 
   <section class="about">
@@ -323,9 +323,11 @@
   document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
 
   /* ---------- the wall ---------- */
-  var shipped = [];
+  var shipped = [
+    { n: "001", name: "FORGE", href: "https://forge.hassanahmad.dev" }
+  ];
   /* Add reviewed projects here to light cells, e.g.
-     { n: "001", name: "FORGE", href: "./projects/forge/" } */
+     { n: "002", name: "NEXT", href: "https://next.hassanahmad.dev" } */
   var wall = document.getElementById("wall");
   var tip = document.getElementById("tip");
   for (var i = 0; i < 100; i++) {
