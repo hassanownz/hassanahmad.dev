@@ -23,6 +23,9 @@
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* The now line and the chess widget are display:flex, which would otherwise
+     beat the `hidden` attribute and leave an empty shell on the page. */
+  [hidden] { display: none !important; }
   html { scroll-behavior: smooth; }
 
   body {
@@ -33,7 +36,7 @@
 
   ::selection { background: var(--acc); color: var(--bg); }
   a { color: inherit; }
-  a:focus-visible, button:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; }
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; }
 
   .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
 
@@ -67,7 +70,7 @@
   .hud button:hover b { color: var(--acc); }
 
   /* ---------- hero ---------- */
-  .hero { position: relative; padding: 40px 0 0; }
+  .hero { position: relative; padding: 40px 0 90px; }
   .eyebrow {
     font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em;
     text-transform: uppercase; color: var(--mut); margin-bottom: 30px;
@@ -80,7 +83,7 @@
     letter-spacing: -0.015em; margin: 44px 0 0; max-width: 780px;
   }
   .hero h1 em { font-style: normal; color: var(--acc); }
-  .hero p.sub { margin: 18px 0 90px; max-width: 560px; color: var(--mut); font-size: 19px; }
+  .hero p.sub { margin: 18px 0 0; max-width: 560px; color: var(--mut); font-size: 19px; }
 
   /* ---------- shared ---------- */
   .kicker {
@@ -111,54 +114,78 @@
     transition: transform 380ms cubic-bezier(.34,1.56,.64,1), background 700ms ease, border-color 700ms ease;
   }
   .wall.on .cell { transform: scale(1); }
-  .cell.lit {
-    background: var(--acc); border-color: var(--acc); cursor: pointer;
-    transition: transform 200ms cubic-bezier(.34,1.56,.64,1);
+  /* A filled cell is told apart by its mark, not by colour. Colour is the hover state. */
+  .cell.filled {
+    background: var(--card); border-color: #3a3427;
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
+    transition: transform 200ms cubic-bezier(.34,1.56,.64,1), border-color 160ms ease, background 160ms ease;
   }
-  .cell.lit:hover, .cell.lit:focus-visible { transform: scale(1.6) !important; z-index: 3; }
+  a.cell.filled { cursor: pointer; }
+  div.cell.filled { cursor: default; }
+  /* 8px source art, only ever shown at a whole-number multiple. */
+  .cell .mark { width: 16px; height: 16px; image-rendering: pixelated; display: block; }
+  .cell.filled:hover, .cell.filled:focus-visible { border-color: var(--acc); background: #1d1410; z-index: 3; }
+  .cell.filled:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+  .cell.filled:hover .mark, .cell.filled:focus-visible .mark { width: 24px; height: 24px; }
+  @media (min-width: 1000px) {
+    .cell .mark { width: 24px; height: 24px; }
+    .cell.filled:hover .mark, .cell.filled:focus-visible .mark { width: 32px; height: 32px; }
+  }
   .cell.flick { background: var(--acc); border-color: var(--acc); transition: background 60ms ease, border-color 60ms ease, transform 380ms cubic-bezier(.34,1.56,.64,1); }
   .wall-caption { margin-top: 24px; font-family: var(--mono); font-size: 13px; color: var(--mut); }
   .wall-caption b { color: var(--ink); font-weight: 500; }
 
   #tip {
-    position: absolute; pointer-events: none; z-index: 20;
-    background: var(--ink); color: var(--bg);
-    font-family: var(--mono); font-size: 12px; padding: 6px 10px;
-    white-space: nowrap; transform: translate(-50%, -150%);
+    position: absolute; top: 0; left: 0; z-index: 20; pointer-events: none;
+    background: var(--ink); color: #14110c;
+    font-family: var(--mono); font-size: 12px; line-height: 1.45;
+    padding: 8px 10px; width: max-content;
+    max-width: min(264px, calc(100vw - 32px));
     opacity: 0; transition: opacity 120ms ease;
   }
+  #tip .t { display: block; font-weight: 500; letter-spacing: 0.06em; }
+  #tip .d { display: block; margin-top: 3px; color: #4a4235; white-space: normal; }
+  #tip .s {
+    display: inline-block; margin-top: 7px; padding: 1px 6px;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1.5px solid #4a4235; color: #4a4235;
+  }
+  #tip .s.live { background: var(--acc); border-color: var(--acc); color: var(--bg); }
 
-  /* ---------- shipped ---------- */
-  .shipped { padding: 0 0 110px; }
-  .card-list { display: grid; border-top: 1.5px solid var(--line); }
-  .card {
-    display: grid; grid-template-columns: 64px 56px 1fr auto; gap: 26px; align-items: center;
-    padding: 38px 22px; text-decoration: none;
-    border-bottom: 1.5px solid var(--line);
-    position: relative; overflow: hidden;
+  /* ---------- chess widget ---------- */
+  a.chess {
+    display: inline-flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    margin-top: 26px; padding: 12px 16px; text-decoration: none;
+    border: 1.5px solid var(--line); background: var(--card);
+    font-family: var(--mono); font-size: 13px; color: var(--mut);
   }
-  .card::before {
-    content: ""; position: absolute; inset: 0; background: var(--acc);
-    transform: scaleY(0); transform-origin: bottom;
-    transition: transform 300ms cubic-bezier(.65,0,.35,1);
+  a.chess:hover, a.chess:focus-visible { border-color: var(--acc); }
+  a.chess .cw-k { font-size: 11px; letter-spacing: 0.14em; }
+  a.chess .cw-r { color: var(--ink); font-size: 17px; font-variant-numeric: tabular-nums; }
+  a.chess .cw-r span { color: var(--mut); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+  a.chess .cw-d { color: var(--acc); font-variant-numeric: tabular-nums; }
+  a.chess .cw-a { color: var(--ink); }
+  a.chess:hover .cw-a { color: var(--acc); }
+
+  /* ---------- now line ---------- */
+  .now {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    margin: 26px 0 0; font-family: var(--mono); font-size: 13px; color: var(--ink);
   }
-  .card:hover::before { transform: scaleY(1); }
-  .card > * { position: relative; z-index: 1; transition: color 200ms ease, transform 300ms cubic-bezier(.34,1.56,.64,1); }
-  .card .no { font-family: var(--mono); font-size: 14px; color: var(--mut); }
-  .card canvas.glyph { width: 56px; height: 56px; image-rendering: pixelated; display: block; }
-  .card h3 {
-    font-family: var(--display); font-weight: 600; text-transform: uppercase;
-    font-size: clamp(28px, 4.4vw, 46px); line-height: 1; letter-spacing: -0.015em;
+  .now .dot { width: 8px; height: 8px; background: var(--acc); flex: none; align-self: center; }
+  .now .lbl { color: var(--acc); letter-spacing: 0.16em; font-size: 11px; }
+  .now time { color: var(--mut); font-size: 11px; letter-spacing: 0.08em; }
+
+  /* ---------- avatar ---------- */
+  .about-grid { display: grid; grid-template-columns: 209px 1fr; gap: 46px; align-items: start; }
+  /* 209px source, shown at 1×. No radius — the pixel grid stays square-aligned. */
+  .avatar {
+    width: 209px; height: 209px; display: block; border-radius: 0;
+    image-rendering: crisp-edges;   /* fallback */
+    image-rendering: pixelated;     /* preferred — later valid declaration wins */
   }
-  .card p { color: var(--mut); font-size: 16px; margin-top: 8px; max-width: 500px; }
-  .card .meta {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--mut); text-align: right;
-  }
-  .card .meta .arrow { display: block; font-size: 24px; margin-top: 8px; color: var(--ink); }
-  .card:hover .no, .card:hover p, .card:hover .meta { color: #14110c; }
-  .card:hover h3 { color: #14110c; transform: translateX(12px) skewX(-3deg); }
-  .card:hover .meta .arrow { color: #14110c; transform: translateX(8px); }
+  @media (max-width: 860px) { .about-grid { grid-template-columns: 1fr; gap: 30px; } }
 
   /* ---------- about ---------- */
   .about { padding: 0 0 100px; }
@@ -195,6 +222,7 @@
   }
   footer a { text-decoration: none; }
   footer a:hover { color: var(--acc); }
+  footer .social { display: flex; gap: 20px; }
 
   .reveal { opacity: 0; transform: translateY(26px); transition: opacity 650ms ease, transform 650ms cubic-bezier(.22,1,.36,1); }
   .reveal.in { opacity: 1; transform: none; }
@@ -209,11 +237,6 @@
 
   @media (max-width: 680px) {
     .wall { grid-template-columns: repeat(10, 1fr); }
-    .card { grid-template-columns: 48px 1fr; gap: 14px; padding: 28px 14px; }
-    .card .no { grid-column: 1; }
-    .card canvas.glyph { width: 44px; height: 44px; }
-    .card .meta { grid-column: 2; text-align: left; }
-    .card .meta .arrow { display: inline; margin-left: 12px; }
   }
 </style>
 </head>
@@ -226,15 +249,15 @@
     <a class="logo" href="/" data-h><span class="px"></span>HASSAN AHMAD</a>
     <nav class="hud">
       <button id="soundBtn" data-h aria-label="Toggle sound">SOUND [<b id="soundLbl">OFF</b>]</button>
-      <span id="clock">--:-- LHE</span>
     </nav>
   </header>
 
   <section class="hero">
-    <p class="eyebrow reveal">A public experiment · <b>Lahore, PK</b></p>
+    <p class="eyebrow reveal">A public experiment · <b>Remote since 2019</b></p>
     <canvas id="field" aria-label="The number 100 in interactive pixels"></canvas>
     <h1 class="reveal">One hundred small projects — <em>built before work,</em> one morning at a time.</h1>
     <p class="sub reveal">Products, games, tools, and agents, shipped small and counted in pixels. Every finished build lights one cell on the wall below.</p>
+    <p class="now reveal" id="now" hidden><span class="dot"></span><span class="lbl">NOW</span><span id="nowText"></span><time id="nowDate"></time></p>
   </section>
 
   <section class="wall-section">
@@ -242,23 +265,38 @@
       <h2>The wall</h2>
       <div class="big-count"><span id="count">000</span><small> / 100</small></div>
     </div>
-    <div class="wall reveal" id="wall" role="list" aria-label="100-project progress wall, 1 shipped"></div>
-    <p class="wall-caption reveal"><b>1 lit, 99 to go.</b> Run your cursor over the dark ones — that's the future flickering.</p>
+    <div class="wall reveal" id="wall" role="group" aria-label="100-project progress wall"></div>
+    <p class="wall-caption reveal"><b id="wallCap"></b> Run your cursor over the dark ones — that's the future flickering.</p>
+    <a class="chess reveal" id="chessw" href="https://chess.hassanahmad.dev" data-h hidden>
+      <span class="cw-k">003 · CHESS</span>
+      <span class="cw-r"><b id="cwRating"></b> <span id="cwClass"></span></span>
+      <span class="cw-d" id="cwDelta"></span>
+      <span class="cw-a">→</span>
+    </a>
   </section>
 
   <section class="about">
     <p class="kicker reveal">About</p>
-    <p class="big reveal">I'm Hassan — a product &amp; AI lead in Lahore. By morning, I build <span class="cyc" id="cyc">games</span> with AI, and I'm counting to a hundred in public.</p>
-    <p class="plain reveal">Some builds are toys, some are experiments, and a few might grow into real products — that's the point of the number. If something here is useful to you, or you just want to talk shop, find me on <a href="https://x.com/hahmadio" data-h>X</a>.</p>
+    <div class="about-grid">
+      <img class="avatar reveal" src="/avatar.png" width="209" height="209" decoding="async"
+           alt="Pixel-art portrait of Hassan Ahmad">
+      <div>
+        <p class="big reveal">I'm Hassan — a product &amp; AI lead. By morning, I build <span class="cyc" id="cyc">games</span> with AI, and I'm counting to a hundred in public.</p>
+        <p class="plain reveal">Some builds are toys, some are experiments, and a few might grow into real products — that's the point of the number. If something here is useful to you, or you just want to talk shop, find me on <a href="https://x.com/doithassan" data-h>X</a> or <a href="https://instagram.com/doithassan_" data-h>Instagram</a>.</p>
+      </div>
+    </div>
   </section>
 
   <div class="shout-wrap">
-    <a class="shout reveal" href="https://x.com/hahmadio" id="shout" data-h data-blip="440">SAY HELLO<span class="end l">→</span></a>
+    <a class="shout reveal" href="https://x.com/doithassan" id="shout" data-h data-blip="440">SAY HELLO<span class="end l">→</span></a>
   </div>
 
   <footer>
     <span>hassanahmad.dev</span>
-    <a href="https://x.com/hahmadio" data-h>@hahmadio</a>
+    <span class="social">
+      <a href="https://x.com/doithassan" data-h>@doithassan</a>
+      <a href="https://instagram.com/doithassan_" data-h>@doithassan_</a>
+    </span>
     <span>© <span id="yr">2026</span> · built before work</span>
   </footer>
 </div>
@@ -266,17 +304,56 @@
 <div id="tip"></div>
 
 <script>
+/* ════════════════════════════════════════════════════════════════════
+   NOW — the one line on the page you edit by hand.
+   Change these two fields and nothing else. It hides itself after
+   NOW_MAX_AGE_DAYS rather than advertising a stale week.
+   ════════════════════════════════════════════════════════════════════ */
+var NOW = {
+  text: "Rebuilding this page — marks on the wall tiles, a chess widget, new handles.",
+  updated: "2026-08-14"   // YYYY-MM-DD
+};
+var NOW_MAX_AGE_DAYS = 21;
+
+/* Written by .github/workflows/chess-snapshot.yml at build time. Do not edit by hand. */
+/* chess:snapshot:start */
+var CHESS = {"rating":636,"time_class":"Rapid","delta_30d":86,"generated_at":"2026-08-13T04:56:30.303Z"};
+/* chess:snapshot:end */
+var CHESS_MAX_AGE_DAYS = 4;
+
 (function () {
   var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var ACC = "#ff3d7f";
+  var INK = "#f2ecdd";
 
-  /* ---------- clock + year ---------- */
-  function tick() {
-    var t = new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" });
-    document.getElementById("clock").textContent = t + " LHE";
-  }
-  tick(); setInterval(tick, 15000);
   document.getElementById("yr").textContent = new Date().getFullYear();
+
+  /* ---------- now line ---------- */
+  (function () {
+    var stamp = Date.parse(NOW.updated + "T00:00:00Z");
+    if (!NOW.text || !isFinite(stamp)) return;
+    var days = (Date.now() - stamp) / 86400000;
+    if (days > NOW_MAX_AGE_DAYS) return;
+    document.getElementById("nowText").textContent = NOW.text;
+    var d = document.getElementById("nowDate");
+    d.dateTime = NOW.updated;
+    d.textContent = new Date(stamp).toLocaleDateString("en-GB",
+      { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+    document.getElementById("now").hidden = false;
+  })();
+
+  /* ---------- chess widget (build-time data, no runtime fetch) ---------- */
+  (function () {
+    if (!CHESS || typeof CHESS.rating !== "number") return;
+    var stamp = Date.parse(CHESS.generated_at);
+    if (!isFinite(stamp) || (Date.now() - stamp) / 86400000 > CHESS_MAX_AGE_DAYS) return;
+    document.getElementById("cwRating").textContent = CHESS.rating;
+    document.getElementById("cwClass").textContent = CHESS.time_class || "";
+    var d = CHESS.delta_30d;
+    document.getElementById("cwDelta").textContent =
+      typeof d !== "number" ? "" : d === 0 ? "level over 30 days" : (d > 0 ? "+" : "") + d + " in 30 days";
+    document.getElementById("chessw").hidden = false;
+  })();
 
   /* ---------- sound ---------- */
   var soundOn = false, ac = null;
@@ -322,35 +399,120 @@
   }, { threshold: 0.12 });
   document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
 
-  /* ---------- the wall ---------- */
+  /* ---------- the wall ----------
+     One monochrome 8×8 mark per tool, all the same weight, so the wall stays
+     one object. `Live` links through; `Personal use` is tooltip-only. */
+  var MARKS = {
+    barbell: ["00000000","01100110","01100110","11111111","11111111","01100110","01100110","00000000"],
+    lines:   ["00000000","00000000","11001111","11001111","00000000","11001111","11001111","00000000"],
+    pawn:    ["00011000","00111100","00111100","00011000","00011000","00111100","01111110","11111111"]
+  };
   var shipped = [
-    { n: "001", name: "FORGE", href: "https://forge.hassanahmad.dev" }
+    { n: "001", name: "FORGE",  mark: "barbell", status: "Personal use", href: null,
+      desc: "A gym coach and workout tracker, built for one user." },
+    { n: "002", name: "LOGGER", mark: "lines",   status: "Personal use", href: null,
+      desc: "Dump the day into one box, get a plan for the hours that are left." },
+    { n: "003", name: "CHESS",  mark: "pawn",    status: "Live",
+      href: "https://chess.hassanahmad.dev",
+      desc: "A Chess.com rating climb, rebuilt from the public API every day." }
   ];
-  /* Add reviewed projects here to light cells, e.g.
-     { n: "002", name: "NEXT", href: "https://next.hassanahmad.dev" } */
+  /* Add reviewed projects here to fill cells. `href` stays null until anyone can open it. */
+
   var wall = document.getElementById("wall");
   var tip = document.getElementById("tip");
+  /* A tap fires a synthetic mouseenter right before click, so touch has to be
+     detected up front — otherwise a live tile navigates before its info is read. */
+  var coarse = window.matchMedia("(hover: none)").matches ||
+               window.matchMedia("(pointer: coarse)").matches ||
+               navigator.maxTouchPoints > 0;
+  var activeTile = null;
+
+  function drawMark(cv, art, colour) {
+    var g = cv.getContext("2d");
+    g.clearRect(0, 0, 8, 8);
+    g.fillStyle = colour;
+    for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+      if (art[r][c] === "1") g.fillRect(c, r, 1, 1);
+    }
+  }
+
+  function placeTip(el) {
+    var r = el.getBoundingClientRect(), t = tip.getBoundingClientRect();
+    var left = r.left + window.pageXOffset + r.width / 2 - t.width / 2;
+    left = Math.max(12, Math.min(left, document.documentElement.clientWidth - t.width - 12));
+    var above = r.top - t.height - 10;
+    var top = above < 8
+      ? r.bottom + window.pageYOffset + 10
+      : above + window.pageYOffset;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+
+  function showTip(el, p) {
+    if (activeTile && activeTile !== el) hideTip();
+    tip.innerHTML = '<span class="t"></span><span class="d"></span><span class="s"></span>';
+    tip.querySelector(".t").textContent = p.n + " · " + p.name;
+    tip.querySelector(".d").textContent = p.desc;
+    var s = tip.querySelector(".s");
+    s.textContent = p.status;
+    if (p.href) s.className = "s live";
+    placeTip(el);
+    tip.style.opacity = 1;
+    activeTile = el;
+    el._lit(true);
+  }
+
+  /* Always puts the mark it lit back to monochrome — colour is the hover state only. */
+  function hideTip() {
+    if (activeTile) activeTile._lit(false);
+    tip.style.opacity = 0;
+    activeTile = null;
+  }
+
+  function bindTile(el, p, cv) {
+    el._lit = function (on) { drawMark(cv, MARKS[p.mark], on ? ACC : INK); };
+    el.addEventListener("mouseenter", function () {
+      if (coarse) return;                     /* ignore the synthetic one a tap emits */
+      showTip(el, p); blip(parseFloat(el.dataset.blip));
+      if (p.href) cur.classList.add("big");   /* no big cursor on a tile that isn't a link */
+    });
+    /* Only tear down if this tile is still the one showing. */
+    el.addEventListener("mouseleave", function () {
+      if (activeTile === el) hideTip();
+      cur.classList.remove("big");
+    });
+    /* Keyboard focus only. A tap also focuses, and that would mark the tile
+       active before its click ran, letting a live tile navigate on the first tap. */
+    el.addEventListener("focus", function () {
+      var viaKeyboard = true;
+      try { viaKeyboard = el.matches(":focus-visible"); } catch (e) {}
+      if (viaKeyboard) showTip(el, p);
+    });
+    el.addEventListener("blur", function () { if (activeTile === el) hideTip(); });
+    /* Touch: the first tap reveals the tile, a second tap follows the link. */
+    el.addEventListener("click", function (ev) {
+      if (!coarse) return;
+      if (activeTile !== el) { ev.preventDefault(); showTip(el, p); }
+    });
+  }
+
   for (var i = 0; i < 100; i++) {
-    var lit = i < shipped.length;
-    var c = document.createElement(lit ? "a" : "div");
-    c.className = "cell" + (lit ? " lit" : "");
-    c.setAttribute("role", "listitem");
+    var p = shipped[i];
+    var c = document.createElement(p && p.href ? "a" : "div");
+    c.className = "cell" + (p ? " filled" : "");
     c.style.transitionDelay = (i * 8) + "ms";
-    if (lit) {
-      c.href = shipped[i].href;
-      c.setAttribute("aria-label", shipped[i].n + " " + shipped[i].name);
-      c.dataset.label = shipped[i].n + " · " + shipped[i].name;
+    if (p) {
+      if (p.href) { c.href = p.href; c.rel = "noopener"; }
+      else { c.tabIndex = 0; }
+      c.setAttribute("aria-label",
+        p.n + " " + p.name + ". " + p.desc + " " + p.status +
+        (p.href ? "." : ", not publicly available."));
       c.dataset.blip = 520 + i * 170;
-      c.addEventListener("mouseenter", function () {
-        blip(parseFloat(this.dataset.blip));
-        cur.classList.add("big");
-      });
-      c.addEventListener("mousemove", function (e) {
-        tip.textContent = this.dataset.label;
-        tip.style.left = e.pageX + "px"; tip.style.top = e.pageY + "px";
-        tip.style.opacity = 1;
-      });
-      c.addEventListener("mouseleave", function () { tip.style.opacity = 0; cur.classList.remove("big"); });
+      var cv = document.createElement("canvas");
+      cv.width = 8; cv.height = 8; cv.className = "mark"; cv.setAttribute("aria-hidden", "true");
+      c.appendChild(cv);
+      drawMark(cv, MARKS[p.mark], INK);
+      bindTile(c, p, cv);
     } else {
       c.setAttribute("aria-hidden", "true");
       c.addEventListener("mouseenter", function () {
@@ -362,6 +524,21 @@
     }
     wall.appendChild(c);
   }
+
+  document.getElementById("wallCap").textContent =
+    shipped.length + " filled, " + (100 - shipped.length) + " to go.";
+  wall.setAttribute("aria-label", "100-project progress wall, " + shipped.length + " filled");
+
+  /* Dismiss on tap-away, on Escape, and on scroll while a tap has one open. */
+  document.addEventListener("click", function (ev) {
+    if (activeTile && !activeTile.contains(ev.target)) hideTip();
+  }, true);
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && activeTile) { activeTile.blur(); hideTip(); }
+  });
+  window.addEventListener("scroll", function () {
+    if (activeTile) { if (coarse) hideTip(); else placeTip(activeTile); }
+  }, { passive: true });
   var counted = false;
   var wallIO = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) {
@@ -385,42 +562,6 @@
   }, { threshold: 0.25 });
   wallIO.observe(wall);
   if (reduced) { document.getElementById("count").textContent = ("00" + shipped.length).slice(-3); wall.classList.add("on"); }
-
-  /* ---------- card pixel glyphs ---------- */
-  var GLYPH_ART = {
-    bar:   ["00000000","01100110","01100110","11111111","11111111","01100110","01100110","00000000"],
-    cross: ["11000011","11100111","01111110","00111100","00111100","01111110","11100111","11000011"],
-    beam:  ["10000000","11000000","01100000","00110000","00011000","00001101","00000111","00001111"]
-  };
-  function drawGlyph(cv, art, jitter) {
-    var g = cv.getContext("2d");
-    g.clearRect(0, 0, 8, 8);
-    for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
-      if (art[r][c] === "1") {
-        if (jitter && Math.random() < 0.25) continue;
-        g.fillStyle = jitter && Math.random() < 0.3 ? "#14110c" : ACC;
-        g.fillRect(c, r, 1, 1);
-      }
-    }
-  }
-  document.querySelectorAll(".card").forEach(function (card) {
-    var cv = card.querySelector("canvas.glyph");
-    var art = GLYPH_ART[card.dataset.glyph];
-    drawGlyph(cv, art, false);
-    var jv = null;
-    card.addEventListener("mouseenter", function () {
-      if (reduced) return;
-      var t = 0;
-      jv = setInterval(function () {
-        drawGlyph(cv, art, true);
-        if (++t > 6) { clearInterval(jv); drawGlyph(cv, art, false); }
-      }, 55);
-    });
-    card.addEventListener("mouseleave", function () {
-      if (jv) clearInterval(jv);
-      drawGlyph(cv, art, false);
-    });
-  });
 
   /* ---------- cycling word ---------- */
   var words = ["games", "tools", "sims", "agents"];
@@ -457,7 +598,6 @@
   var canvas = document.getElementById("field");
   var ctx = canvas.getContext("2d");
   var dots = [], bgCells = [], mouse = { x: -9999, y: -9999 };
-  var INK = "#f2ecdd";
 
   function build() {
     var w = canvas.clientWidth || canvas.parentElement.clientWidth;
